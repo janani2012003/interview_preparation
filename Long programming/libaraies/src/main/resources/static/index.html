@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Library UI</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1000px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 20px;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .form {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        input {
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            width: 180px;
+            background: white;
+            color: black;
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .add { background: #00c9a7; color: white; }
+        .update { background: #ffc75f; color: black; }
+        .load { background: #4facfe; color: white; }
+        .delete { background: #ff6b6b; color: white; }
+        .edit { background: #1dd1a1; color: white; }
+
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: center;
+        }
+
+        th {
+            background: rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <h1>Smart Library</h1>
+
+    <input type="hidden" id="bookId">
+
+    <div class="form">
+        <input type="text" id="bookname" placeholder="Book Name">
+        <input type="text" id="authorname" placeholder="Author">
+        <input type="text" id="publishername" placeholder="Publisher">
+
+        <button class="add" onclick="addBook()">Add</button>
+        <button class="update" onclick="updateBook()">Update</button>
+        <button class="load" onclick="loadBooks()">Load</button>
+    </div>
+
+    <table>
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Book</th>
+            <th>Author</th>
+            <th>Publisher</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+</div>
+
+<script>
+    const API = "http://localhost:8080/api/books";
+
+    window.onload = loadBooks;
+
+    function loadBooks() {
+        fetch(API)
+            .then(res => res.json())
+            .then(data => {
+                let rows = "";
+
+                data.forEach(b => {
+                    rows += `
+                        <tr>
+                            <td>${b.id}</td>
+                            <td>${b.bookname}</td>
+                            <td>${b.authorname}</td>
+                            <td>${b.publishername}</td>
+                            <td>
+                                <button class="edit" onclick="editBook(${b.id}, '${b.bookname}', '${b.authorname}', '${b.publishername}')">Edit</button>
+                                <button class="delete" onclick="deleteBook(${b.id})">Delete</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                document.getElementById("tableBody").innerHTML = rows;
+            })
+            .catch(err => console.error("Load Error:", err));
+    }
+
+    function addBook() {
+        const book = getFormData();
+
+        fetch(API, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(book)
+        })
+            .then(() => {
+                alert("Book Added ✅");
+                clearForm();
+                loadBooks();
+            })
+            .catch(err => console.error("Add Error:", err));
+    }
+
+    function editBook(id, name, author, publisher) {
+        document.getElementById("bookId").value = id;
+        document.getElementById("bookname").value = name;
+        document.getElementById("authorname").value = author;
+        document.getElementById("publishername").value = publisher;
+    }
+
+    function updateBook() {
+        const id = document.getElementById("bookId").value;
+        const book = getFormData();
+
+        fetch(`${API}/${id}`, {
+            method: "PUT",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(book)
+        })
+            .then(() => {
+                alert("Updated ✅");
+                clearForm();
+                loadBooks();
+            })
+            .catch(err => console.error("Update Error:", err));
+    }
+
+    function deleteBook(id) {
+        fetch(`${API}/${id}`, {
+            method: "DELETE"
+        })
+            .then(() => {
+                alert("Deleted ✅");
+                loadBooks();
+            })
+            .catch(err => console.error("Delete Error:", err));
+    }
+
+    function getFormData() {
+        return {
+            bookname: document.getElementById("bookname").value,
+            authorname: document.getElementById("authorname").value,
+            publishername: document.getElementById("publishername").value
+        };
+    }
+
+    function clearForm() {
+        document.getElementById("bookId").value = "";
+        document.getElementById("bookname").value = "";
+        document.getElementById("authorname").value = "";
+        document.getElementById("publishername").value = "";
+    }
+</script>
+
+</body>
+</html>
